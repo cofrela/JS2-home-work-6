@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script> 
+    
+<style>
+  .form-control, .error-input {
+    width: 200px;
+    height: 20px;
+    border: 1px solid black;  
+    background: #ccc;
+  }
+</style>
+    
+<script type="text/javascript">
+    $(document).ready(function() {
+        $("#birth").datepicker({
+            monthNames:["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"],
+            dayNamesMin:["Вс","Пн","Вт","Ср","Чт","Пт","Сб"],
+            firstDay:1,
+            dateFormat:"yy-mm-dd"
+        });   
+    });  
+</script>
+</head>
+
+<body>
+        <form action="form.php" method="post">
+            <label for="username">Ваше имя:</label>
+            <br>
+            <input id="username" class="form-control" type="text" name="username" placeholder="username">
+            <br>
+            <br>
+            <label for="password">Пароль:</label>
+            <br>
+            <input id="password" class="form-control" type="text" name="userpassword" placeholder="password">
+            <br>
+            <br>
+            <label for="email">Ваш Email:</label>
+            <br>
+            <input id="email" class="form-control" type="email" name="useremail" placeholder="email">
+            <br>
+            <br>
+            <label for="gender">Пол:</label>
+            <br>
+            <select id="gender" class="form-control">
+                <option>M</option>
+                <option>Ж</option>
+            </select>
+            <br>
+            <br>
+            <label for="credit_card">Кредитная карта:</label>
+            <br>
+            <input id="credit_card" class="form-control" name="usercreditcard" placeholder="creditcard">
+            <br>
+            <br>
+            <label for="bio">Биография:</label>
+            <br>
+            <textarea id="bio" class="form-control" type="text" name="userbio" placeholder="bio"></textarea>
+            <br>
+            <br>
+            <label for="birth">Дата рождения:</label>
+            <br>
+            <input id="birth" class="form-control" type="text">
+            <br>
+            <br>  
+            <input type="button" value="Отправить" onclick="sendRequest()">
+        </form> 
+           
+            <div id="progress"></div>
+
+            <div id="dialog" title="Errors:">
+                <div id="username_text"></div> 
+                <div id="password_text"></div>
+                <div id="email_text"></div>
+                <div id="gender_text"></div>
+                <div id="credit_card_text"></div>
+                <div id="bio_text"></div>
+                <div id="birth_text"></div>
+            </div>
+                         
+<script>
+    function getXmlHttp() {
+        var xmlhttp;
+    if (window.XMLHttpRequest) {
+        xmlhttp = new XMLHttpRequest()
+    } else {
+        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+    }
+        return xmlhttp;
+    }
+    
+    var xmlhttp = getXmlHttp(); //Создаём объект XMLHTTP
+    var fields = document.getElementsByClassName("form-control"); 
+    var fieldsArray = Array.prototype.slice.call(fields, 0);
+    
+    function sendRequest() {
+        xmlhttp.open("POST", "validator.php", true); //Открываем асинхронное соединение
+        xmlhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded"); // Отправляем кодировку
+        //Сбор данных из формы
+        var formData = fieldsArray.map(function(item) {
+            return item.id + "=" + item.value;
+        }).join("&");
+        xmlhttp.send(formData); //Отправляем POST-запрос
+        xmlhttp.onreadystatechange = function() {  //Ждём ответа от сервера
+            if (xmlhttp.readyState == 4) { // Ответ пришёл
+                if(xmlhttp.status == 200) { // Сервер вернул код 200
+                var response = JSON.parse(xmlhttp.responseText);
+                    if (!response.result) {
+                        var errorObject = response.error;
+                        for (var key in errorObject) {
+                            var correctKey = key.toLowerCase().replace(' ', '_');
+                            document.getElementById(correctKey + '_text').innerHTML = errorObject[key];
+                            var errorInput = document.getElementById(correctKey);
+                            errorInput.classList.add("error-input");
+                            $(".error-input").effect("bounce", { direction:'up', times:2 }, "slow"); //Эффект Bounce для неправильных полей формы
+                        }                  
+                    }
+                } 
+            }
+        };
+        //Прогрессбар заполнения полей формы
+        $("#progress").progressbar({
+            value: persentOfProgress() 
+        });
+        
+        //Диалоговое окно с ошибками
+        $("#dialog").dialog();
+        
+    };
+    
+    
+    //Функция для вычисления процента заполнения прогрессбара
+    function persentOfProgress() {
+        var common = fieldsArray.length;
+        var count = 0;
+        for (var i = 0; i < fieldsArray.length; i++) {
+            if ((document.getElementById(fieldsArray[i].id).value.length) != 0) count++;
+        }
+        var persent = (count / common) * 100;
+        return persent;     
+    };
+
+</script>
+
+</body>
+</html>
